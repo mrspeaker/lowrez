@@ -29,11 +29,11 @@
 					yo = (env.h / 2) - p.y,
 					dist = Math.sqrt(xo * xo + yo * yo);
 
-				var outer = dist > (env.time / 4 % 32) ? 60 : 0;
-				var inner = dist < (((env.time / 4 + 9)) % 32) ? 30 : 0;
+				var outer = dist > (Math.abs(Math.sin(env.time / 100))) * 15 ? 60 : 0;
+				var inner = dist * 1.5 > (Math.abs(Math.sin(env.time / 150))) * 30 ? 30 : 0;
 				var waves = (p.x * ((p.idx + (env.time / 3 | 0)) % 10) + p.y) * 0.5;
 
-				return waves - outer + inner;
+				return outer + inner - waves;
 			});
 
 			this.run();
@@ -79,19 +79,17 @@
 		update: function () {
 
 			var self = this,
-				data = this.imgData.data;
+				img = this.imgData.data;
 
 			// Set up the field
 			for (var i = 0; i < this.h; i++) {
 				for (var j = 0; j < this.w; j++) {
 					var index = (j + (i * this.w)) * 4,
-						val;
+						val = img[index];
 
 					this.funcs.forEach(function (f) {
 						self.putPixel(f(val, {idx: index, x: j, y: i, xr: j / 32, yr: j / 32}), j, i);
 					});
-
-					//val = data[index];
 				}
 			}
 
