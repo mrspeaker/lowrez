@@ -20,42 +20,43 @@
 			this.funcs.push(
 
 				// Clear
-				(val, p) => 0,
+				() => 0,
 
 				// Sin/cos swishy
-				(val, p, e) => {
-					let {t} = e
-					let s = val
-					s += (p.x * (Math.sin(t / 30) * 3)) + (p.y * (Math.cos(t / 50) * 2));
-					s += (p.x * (Math.sin(t / 50) * 3)) + (p.y * (Math.cos(t / 100) * 2))
+				(val, {x, y}, {t}) => {
+					let {sin, cos} = Math,
+						s = val;
+					s += (x * (sin(t / 30) * 3)) + (y * (cos(t / 50) * 2));
+					s += (x * (sin(t / 50) * 3)) + (y * (cos(t / 100) * 2))
 					return s;
 				},
 
 				// Circles
-				(val, p, e) => {
-					let xo = (e.w / 2) - p.x + (Math.sin(e.t / 100) * 7),
-						yo = (e.h / 2) - p.y + (Math.cos(e.t / 100) * 7),
-						dist = Math.hypot(xo, yo);
+				(val, p, {w, h, t}) => {
+					let {sin, cos, abs, hypot} = Math,
+						xo = (w / 2) - p.x + (sin(t / 100) * 7),
+						yo = (h / 2) - p.y + (cos(t / 100) * 7),
+						dist = hypot(xo, yo);
 
-					let outer = dist > (Math.abs(Math.sin(e.t / 100))) * 15 ? 60 : 0;
-					let inner = dist * 1.5 > (Math.abs(Math.sin(e.t / 150))) * 30 ? 60 : 0;
+					let outer = dist > (abs(sin(t / 100))) * 15 ? 60 : 0;
+					let inner = dist * 1.5 > (abs(sin(t / 150))) * 30 ? 60 : 0;
 
 					return val + ((outer + inner) / 2);
 				},
 
 				// Waves
-				(val, p, e) => val + (p.x * ((p.idx + (e.t / 3 | 0)) % 10) + p.y) * 0.1,
+				(val, p, {t}) => val + (p.x * ((p.idx + (t / 3 | 0)) % 10) + p.y) * 0.1,
 
 				// Sine dot
-				(val, p, e) => (
-					(p.x == (e.t / 5 % e.w | 0)) &&
-					(p.y == 16 + (Math.sin(e.t / 8) * 8 | 0))
+				(val, p, {w, t}) => (
+					(p.x == (t / 5 % w | 0)) &&
+					(p.y == 16 + (Math.sin(t / 8) * 8 | 0))
 					? 255 : val),
 
 				// Sine dot stalker
-				(val, p, e) => (
-					(p.x == ((e.t - 4) / 5 % e.w | 0)) &&
-					(p.y == 16 + (Math.sin((e.t - 4) / 8) * 8 | 0))
+				(val, p, {w, t}) => (
+					(p.x == ((t - 4) / 5 % w | 0)) &&
+					(p.y == 16 + (Math.sin((t - 4) / 8) * 8 | 0))
 					? 100 : val)
 
 			);
@@ -114,9 +115,7 @@
 		},
 
 		render: function () {
-
 			this.ctx.putImageData(this.imgData, 0, 0);
-
 		}
 
 	};
