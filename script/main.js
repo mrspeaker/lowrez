@@ -17,49 +17,55 @@
 			};
 
 			// "Shaders"
-			this.funcs.push(
+			let shaders = [
 
 				// Clear
 				() => 0,
 
+				// Noise
+				// (val) => val + Math.random() * 0.4,
+
 				// Sin/cos swishy
-				(val, {x, y}, {t}) => {
+				(val, {xr, yr}, {t}) => {
 					let {sin, cos} = Math,
 						s = val;
-					s += (x * (sin(t / 30) * 3)) + (y * (cos(t / 50) * 2));
-					s += (x * (sin(t / 50) * 3)) + (y * (cos(t / 100) * 2))
+					s += sin(xr * cos(t / 300) * 5) + cos(yr * cos(t / 200) * 5);
+					s += sin(yr * sin(t / 150) * 10) + cos(xr * sin(t / 400) * 15);
+					s /= 8;
 					return s;
 				},
 
 				// Circles
-				(val, p, {w, h, t}) => {
+				(val, {xr, yr}, {t}) => {
 					let {sin, cos, abs, hypot} = Math,
-						xo = (w / 2) - p.x + (sin(t / 100) * 7),
-						yo = (h / 2) - p.y + (cos(t / 100) * 7),
+						xo = 0.5 - xr + (sin(t / 100) / 3),
+						yo = 0.5 - yr + (cos(t / 80) / 3),
 						dist = hypot(xo, yo);
 
-					let outer = dist > (abs(sin(t / 100))) * 15 ? 60 : 0;
-					let inner = dist * 1.5 > (abs(sin(t / 150))) * 30 ? 60 : 0;
+					let outer = dist * 2.3 < (abs(sin(t / 100))) * 0.7 ? 0.3 : 0;
+					let inner = dist * 2.7 < (abs(sin(t / 100))) * 0.6 ? 0.8 : 0;
 
 					return val + ((outer + inner) / 2);
 				},
 
 				// Waves
-				(val, p, {t}) => val + (p.x * ((p.idx + (t / 3 | 0)) % 10) + p.y) * 0.1,
+				(val, {x, y, idx}, {t}) => val + (x * ((idx + (t / 3 | 0)) % 10) + y) * 0.0002,
 
 				// Sine dot
-				(val, p, {w, t}) => (
-					(p.x == (t / 5 % w | 0)) &&
-					(p.y == 16 + (Math.sin(t / 8) * 8 | 0))
-					? 255 : val),
+				(val, {x, y}, {w, t}) => (
+					(x == (t / 5 % (w * 2) | 0)) &&
+					(y == 16 + (Math.sin(t / 8) * 8 | 0))
+					? 1 : val),
 
 				// Sine dot stalker
-				(val, p, {w, t}) => (
-					(p.x == ((t - 4) / 5 % w | 0)) &&
-					(p.y == 16 + (Math.sin((t - 4) / 8) * 8 | 0))
-					? 100 : val)
+				(val, {x, y}, {w, t}) => (
+					(x == ((t - 4) / 5 % (w * 2) | 0)) &&
+					(y == 16 + (Math.sin((t - 4) / 8) * 8 | 0))
+					? 0.8 : val)
 
-			);
+			];
+
+			this.funcs.push(...shaders);
 
 			this.run();
 
@@ -79,11 +85,9 @@
 			setTimeout(() => this.run(), 16);
 		},
 
-		putPixel: function (col, x, y) {
+		putPixel: function (col = 0, x = 0, y = 0) {
 			let idx = (y * this.w + x) * 4,
 				img = this.imgData.data;
-
-			col = Math.min(255, Math.max(0, col));
 
 			img[idx] = col;
 			img[idx + 1] = col;
@@ -95,20 +99,17 @@
 			let {imgData, env, w, h} = this,
 				img = imgData.data;
 
-			// Set up the field
-			for (let y = 0; y < h; y++) {
-				for (let x = 0; x < w; x++) {
-					let idx = (x + (y * w)) * 4,
-						data = { idx: idx, x: x, y: y, xr: x / w, yr: y / h };
+			for (let {x, y} of matrix(w, h)) {
 
-					let mixed = this.funcs.reduce((ac, f) => f(
-						Math.min(255, Math.max(0, ac)),
-						data,
-						env
-					), img[idx]);
+				let idx = (x + (y * w)) * 4;
+				let mixed = this.funcs.reduce((ac, f) => f(
+					Math.min(1, Math.max(0, ac)),
+					{ idx: idx, x: x, y: y, xr: x / w, yr: y / h },
+					env
+				), img[idx]);
 
-					this.putPixel(mixed, x, y);
-				}
+				this.putPixel(((mixed + 1) * 255) - 255, x, y);
+
 			}
 
 			env.t++;
@@ -123,3 +124,20 @@
 	window.main = main;
 
 }());
+
+function* range(from, to) {
+	let i = from;
+	while (i < to) {
+		yield i++;
+	}
+}
+
+function* matrix(w, h) {
+	for (y of range(0, h))
+		for (x of range(0, w))
+			yield {x: x, y: y};
+}
+
+// Possibly - matrix of any dimenstions? with ...dimestions param
+
+//let matrix = (w, h) => (for (y of range(0, h)) for (x of range(0, w)) {x: x, y: y});
