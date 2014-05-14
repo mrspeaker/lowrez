@@ -29,11 +29,15 @@
 				(val, {xr, yr}, {t}) => {
 					let {sin, cos} = Math,
 						s = val;
-					s += sin(xr * cos(t / 300) * 5) + cos(yr * cos(t / 200) * 5);
-					s += sin(yr * sin(t / 150) * 10) + cos(xr * sin(t / 400) * 15);
-					s /= 8;
+					s += sin(xr * cos(t / 300) * 80) + cos(yr * cos(t / 300) * 10);
+					s += sin(yr * sin(t / 200) * 40) + cos(xr * sin(t / 500) * 40);
+					s += sin(xr * sin(t / 100) * 10) + sin(yr * sin(t / 600) * 80);
+					s *= sin(t / 200) * 0.5;
 					return s;
 				},
+
+				// Waves
+				(val, {x, y, idx}, {t}) => val + (x * ((idx + (t / 3 | 0)) % 10) + y) * 0.0002,
 
 				// Circles
 				(val, {xr, yr}, {t}) => {
@@ -47,9 +51,6 @@
 
 					return val + ((outer + inner) / 2);
 				},
-
-				// Waves
-				(val, {x, y, idx}, {t}) => val + (x * ((idx + (t / 3 | 0)) % 10) + y) * 0.0002,
 
 				// Sine dot
 				(val, {x, y}, {w, t}) => (
@@ -89,26 +90,29 @@
 			let idx = (y * this.w + x) * 4,
 				img = this.imgData.data;
 
-			img[idx] = col;
+			img[idx] = col * 0.5;
 			img[idx + 1] = col;
-			img[idx + 2] = col;
+			img[idx + 2] = col * 0.5;
 			img[idx + 3] = 255;
 		},
 
 		update: function () {
 			let {imgData, env, w, h} = this,
-				img = imgData.data;
+				img = imgData.data,
+				clamp = (v) => Math.min(1, Math.max(0, v));
 
 			for (let {x, y} of matrix(w, h)) {
 
-				let idx = (x + (y * w)) * 4;
-				let mixed = this.funcs.reduce((ac, f) => f(
-					Math.min(1, Math.max(0, ac)),
-					{ idx: idx, x: x, y: y, xr: x / w, yr: y / h },
+				let idx = (x + (y * w)) * 4,
+					pos = { idx: idx, x: x, y: y, xr: x / w, yr: y / h };
+
+				let mixed = this.funcs.slice(0, 2).reduce((ac, f) => f(
+					clamp(ac),
+					pos,
 					env
 				), img[idx]);
 
-				this.putPixel(((mixed + 1) * 255) - 255, x, y);
+				this.putPixel(clamp(mixed) * 255, x, y);
 
 			}
 
@@ -123,20 +127,20 @@
 
 	window.main = main;
 
-}());
-
-function* range(from, to) {
-	let i = from;
-	while (i < to) {
-		yield i++;
+	function* range(from, to) {
+		let i = from;
+		while (i < to) {
+			yield i++;
+		}
 	}
-}
 
-function* matrix(w, h) {
-	for (y of range(0, h))
-		for (x of range(0, w))
-			yield {x: x, y: y};
-}
+	function* matrix(w, h) {
+		for (let y of range(0, h))
+			for (let x of range(0, w))
+				yield {x: x, y: y};
+	}
+
+}());
 
 // Possibly - matrix of any dimenstions? with ...dimestions param
 
